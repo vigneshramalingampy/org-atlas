@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./atlas_backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./atlas_backend:/app
+      - /app/.venv  # Keeps the container's uv virtual env safe from local overrides
+    environment:
+      - ENV=development
+
+  frontend:
+    build:
+      context: ./atlas_frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./atlas_frontend:/app
+      - /app/node_modules  # Keeps the container's node_modules safe from local overrides
+    environment:
+      - NODE_ENV=development
+      # This tells Next.js to talk directly to the backend container over Docker's internal network
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+    depends_on:
+      - backend  # This ensures the backend starts up before the frontend spins up

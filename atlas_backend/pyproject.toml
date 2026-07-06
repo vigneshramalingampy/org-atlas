@@ -1,0 +1,15 @@
+[project]
+name = "atlas-backend"
+version = "0.1.0"
+description = "RAG based document upload and processing"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "fastapi>=0.139.0",
+    "loguru>=0.7.3",
+    "pre-commit>=4.6.0",
+    "pydantic-core>=2.46.4",
+    "pydantic-settings>=2.14.2",
+    "ruff>=0.15.20",
+    "uvicorn>=0.50.2",
+]
