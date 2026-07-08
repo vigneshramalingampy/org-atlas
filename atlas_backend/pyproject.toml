@@ -5,10 +5,16 @@ description = "RAG based document upload and processing"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
+    "beautifulsoup4>=4.15.0",
     "fastapi>=0.139.0",
     "loguru>=0.7.3",
+    "lxml>=6.1.1",
+    "pdfplumber>=0.11.10",
     "pydantic-core>=2.46.4",
     "pydantic-settings>=2.14.2",
+    "pymupdf>=1.28.0",
+    "pymupdf4llm>=1.28.0",
+    "pypdf>=6.14.2",
     "ruff>=0.15.20",
     "uvicorn>=0.50.2",
 ]
