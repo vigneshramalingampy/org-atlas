@@ -78,6 +78,7 @@ pnpm-debug.log*
 
 # TypeScript
 *.tsbuildinfo
+.editorconfig
 
 # Coverage
 coverage/
