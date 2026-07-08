@@ -1,7 +1,7 @@
 """application starting file"""
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
-from atlas_backend.health.controller import health_router
+from atlas_backend.core.router import core_router
 
 from atlas_backend.core.lifetime import lifespan
 
@@ -27,5 +27,5 @@ def app() -> FastAPI:
                                allow_methods = ["*"],
                                allow_headers = ["*"]
                                )
-    fastapi_app.include_router(prefix="/api/v1/health", router=health_router)
+    fastapi_app.include_router(prefix="/api/v1", router=core_router)
     return fastapi_app

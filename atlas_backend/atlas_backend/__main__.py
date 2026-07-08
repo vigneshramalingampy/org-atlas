@@ -16,3 +16,15 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+# from sentence_transformers import SentenceTransformer
+
+# model = SentenceTransformer(
+#     "Qwen/Qwen3-Embedding-0.6B",
+#     trust_remote_code=True,
+# )
+
+# embedding = model.encode("Hello World")
+
+# print(type(embedding))
+
+# print(embedding)
