@@ -37,9 +37,7 @@ class MarkdownExtractor(DocumentExtractor):
         try:
             raw_md = path.read_text(encoding="utf-8")
         except Exception as exc:
-            raise DocumentExtractionError(
-                f"Failed to read {file_path}: {exc}"
-            ) from exc
+            raise DocumentExtractionError(f"Failed to read {file_path}: {exc}") from exc
 
         # --- Convert Markdown → HTML ---------------------------------------
         try:
@@ -57,17 +55,24 @@ class MarkdownExtractor(DocumentExtractor):
         soup = BeautifulSoup(html, "lxml")
 
         # Remove the same noise elements as HtmlExtractor
-        for tag in {"script", "style", "nav", "footer", "header",
-                     "aside", "form", "iframe", "noscript"}:
+        for tag in {
+            "script",
+            "style",
+            "nav",
+            "footer",
+            "header",
+            "aside",
+            "form",
+            "iframe",
+            "noscript",
+        }:
             for el in soup.find_all(tag):
                 el.decompose()
 
         text = soup.get_text(separator="\n", strip=True)
 
         if not text:
-            raise DocumentExtractionError(
-                f"No extractable text found in {file_path}"
-            )
+            raise DocumentExtractionError(f"No extractable text found in {file_path}")
 
         metadata = DocumentMetadata(
             filename=path.name,

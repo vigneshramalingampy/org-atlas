@@ -53,9 +53,7 @@ class DocxExtractor(DocumentExtractor):
                     paragraphs.append(line)
 
         if not paragraphs:
-            raise DocumentExtractionError(
-                f"No extractable text found in {file_path}"
-            )
+            raise DocumentExtractionError(f"No extractable text found in {file_path}")
 
         text = "\n\n".join(paragraphs)
 

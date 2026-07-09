@@ -1,4 +1,3 @@
-
 from atlas_backend.modules.ingestion.extractor.base import DocumentExtractor
 from atlas_backend.modules.ingestion.extractor.docx import DocxExtractor
 from atlas_backend.modules.ingestion.extractor.exceptions import (

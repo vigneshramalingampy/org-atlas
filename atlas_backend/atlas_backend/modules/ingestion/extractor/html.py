@@ -23,8 +23,17 @@ class HtmlExtractor(DocumentExtractor):
     """
 
     # Tags whose contents are never useful for text extraction
-    NOISE_TAGS = {"script", "style", "nav", "footer", "header", "aside", "form",
-                  "iframe", "noscript"}
+    NOISE_TAGS = {
+        "script",
+        "style",
+        "nav",
+        "footer",
+        "header",
+        "aside",
+        "form",
+        "iframe",
+        "noscript",
+    }
 
     async def extract(self, file_path: str) -> ParsedDocument:
         path = Path(file_path)
@@ -34,9 +43,7 @@ class HtmlExtractor(DocumentExtractor):
         try:
             raw_html = path.read_text(encoding="utf-8")
         except Exception as exc:
-            raise DocumentExtractionError(
-                f"Failed to read {file_path}: {exc}"
-            ) from exc
+            raise DocumentExtractionError(f"Failed to read {file_path}: {exc}") from exc
 
         try:
             soup = BeautifulSoup(raw_html, "lxml")
@@ -63,9 +70,7 @@ class HtmlExtractor(DocumentExtractor):
         text = body.get_text(separator="\n", strip=True)
 
         if not text:
-            raise DocumentExtractionError(
-                f"No extractable text found in {file_path}"
-            )
+            raise DocumentExtractionError(f"No extractable text found in {file_path}")
 
         metadata = DocumentMetadata(
             filename=display_name,
