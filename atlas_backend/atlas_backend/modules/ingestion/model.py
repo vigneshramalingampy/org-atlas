@@ -24,6 +24,7 @@ class IngestionJob(BaseModel):
     filename: str = ""
     file_type: str = ""
     checksum: str = ""
+    storage_path: str = ""
     total_chunks: int | None = None
     error: str | None = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))

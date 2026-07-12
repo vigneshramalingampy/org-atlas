@@ -20,6 +20,7 @@ dependencies = [
     "python-multipart>=0.0.18",
     "ruff>=0.15.20",
     "sentence-transformers>=3.3.1",
+    "supabase>=2.15.0",
     "surrealdb>=0.4.2",
     "uvicorn>=0.50.2",
 ]

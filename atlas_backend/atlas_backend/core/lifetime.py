@@ -3,7 +3,10 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
-from atlas_backend.api.documents.controller import set_ingestion_service
+from atlas_backend.api.documents.controller import (
+    set_ingestion_service,
+    set_storage_provider,
+)
 from atlas_backend.core.settings import settings
 from atlas_backend.modules.ingestion.chunker.config import ChunkingConfig
 from atlas_backend.modules.ingestion.service import IngestionService
@@ -13,6 +16,7 @@ from atlas_backend.provider.embedding.sentence_transformer import (
 from atlas_backend.provider.knowledge.vector_store.surrealdb import (
     SurrealDBVectorStore,
 )
+from atlas_backend.provider.storage.supabase import SupabaseStorageProvider
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +24,12 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Starting up...")
+
+    storage = SupabaseStorageProvider(
+        url=settings.supabase_url,
+        anon_key=settings.supabase_anon_key,
+    )
+    set_storage_provider(storage, settings.supabase_bucket)
 
     embedding_provider = SentenceTransformerProvider(
         model_name=settings.embedding_model,
@@ -48,7 +58,7 @@ async def lifespan(app: FastAPI):
     set_ingestion_service(ingestion_service)
 
     logger.info(
-        "Ingestion pipeline ready (model=%s, dim=%d)",
+        "Ingestion pipeline ready (model=%s, dim=%d, storage=supabase)",
         embedding_provider.model_name,
         embedding_provider.dimensions,
     )

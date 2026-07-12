@@ -18,6 +18,10 @@ class Settings(BaseSettings):
     reload: bool = True
     log_level: LogLevel = LogLevel.INFO
 
+    supabase_url: str = ""
+    supabase_anon_key: str = ""
+    supabase_bucket: str = "atlas-documents"
+
     surrealdb_url: str = "ws://localhost:8000/rpc"
     surrealdb_namespace: str = "atlas"
     surrealdb_database: str = "knowledge"
