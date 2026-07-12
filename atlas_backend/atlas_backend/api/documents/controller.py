@@ -8,6 +8,7 @@ from fastapi.responses import JSONResponse
 
 from atlas_backend.modules.ingestion.model import IngestionJob, IngestionStatus
 from atlas_backend.modules.ingestion.service import IngestionService
+from atlas_backend.provider.storage.base import StorageProvider
 from atlas_backend.schemas.document import JobStatusResponse, UploadResponse
 from atlas_backend.utils.enums import FileType
 
@@ -17,11 +18,19 @@ documents_router = APIRouter(tags=["Documents"])
 
 _jobs: dict[str, IngestionJob] = {}
 _service: IngestionService | None = None
+_storage: StorageProvider | None = None
+_bucket: str = "atlas-documents"
 
 
 def set_ingestion_service(service: IngestionService) -> None:
     global _service
     _service = service
+
+
+def set_storage_provider(storage: StorageProvider, bucket: str) -> None:
+    global _storage, _bucket
+    _storage = storage
+    _bucket = bucket
 
 
 def _resolve_file_type(filename: str) -> FileType | None:
@@ -36,6 +45,19 @@ def _resolve_file_type(filename: str) -> FileType | None:
         "markdown": FileType.MARKDOWN,
     }
     return mapping.get(ext)
+
+
+def _content_type(filename: str) -> str:
+    ext = Path(filename).suffix.lower()
+    types = {
+        ".pdf": "application/pdf",
+        ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        ".html": "text/html",
+        ".htm": "text/html",
+        ".md": "text/markdown",
+        ".markdown": "text/markdown",
+    }
+    return types.get(ext, "application/octet-stream")
 
 
 def _compute_checksum(data: bytes) -> str:
@@ -64,6 +86,12 @@ async def upload_document(
             content={"detail": "Ingestion service not initialized"},
         )
 
+    if _storage is None:
+        return JSONResponse(
+            status_code=503,
+            content={"detail": "Storage service not initialized"},
+        )
+
     if not file.filename:
         return JSONResponse(
             status_code=422,
@@ -85,11 +113,21 @@ async def upload_document(
         file_type=file_type.value,
         checksum=checksum,
     )
-    _jobs[job.id] = job
+
+    storage_path = f"{job.id}/{file.filename}"
+    await _storage.upload(
+        bucket=_bucket,
+        path=storage_path,
+        data=content,
+        content_type=_content_type(file.filename),
+    )
+    job.storage_path = storage_path
 
     tmp_dir = Path(tempfile.mkdtemp(prefix="atlas_ingest_"))
     tmp_path = tmp_dir / file.filename
     tmp_path.write_bytes(content)
+
+    _jobs[job.id] = job
 
     background_tasks.add_task(_run_ingestion, job, str(tmp_path), file_type)
 
@@ -101,6 +139,7 @@ async def upload_document(
             filename=job.filename,
             file_type=job.file_type,
             checksum=job.checksum,
+            storage_path=job.storage_path,
         ).model_dump(),
     )
 
@@ -133,6 +172,7 @@ async def get_job_status(job_id: str) -> JSONResponse:
             progress=progress,
             total_chunks=job.total_chunks,
             error=job.error,
+            storage_path=job.storage_path,
             created_at=job.created_at,
             updated_at=job.updated_at,
         ).model_dump(),

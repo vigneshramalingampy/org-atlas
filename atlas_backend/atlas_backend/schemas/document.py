@@ -11,6 +11,7 @@ class UploadResponse(BaseModel):
     filename: str
     file_type: str
     checksum: str
+    storage_path: str
 
 
 class IngestionJobProgress(BaseModel):
@@ -24,5 +25,6 @@ class JobStatusResponse(BaseModel):
     progress: IngestionJobProgress | None = None
     total_chunks: int | None = None
     error: str | None = None
+    storage_path: str = ""
     created_at: datetime
     updated_at: datetime
