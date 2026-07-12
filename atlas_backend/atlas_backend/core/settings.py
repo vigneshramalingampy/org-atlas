@@ -4,8 +4,6 @@ from pydantic_settings import BaseSettings
 
 
 class LogLevel(enum.Enum):
-    """Possible log levels"""
-
     INFO = "INFO"
     DEBUG = "DEBUG"
     ERROR = "ERROR"
@@ -19,6 +17,26 @@ class Settings(BaseSettings):
     port: int = 8000
     reload: bool = True
     log_level: LogLevel = LogLevel.INFO
+
+    surrealdb_url: str = "ws://localhost:8000/rpc"
+    surrealdb_namespace: str = "atlas"
+    surrealdb_database: str = "knowledge"
+
+    chunking_strategy: str = "recursive"
+    chunk_max_size: int = 512
+    chunk_min_size: int = 100
+    chunk_parent_size: int = 1024
+    chunk_overlap: int = 0
+
+    embedding_provider: str = "sentence-transformer-mini"
+    embedding_model: str = "all-MiniLM-L6-v2"
+    embedding_batch_size: int = 64
+
+    graph_extraction_enabled: bool = False
+    graph_llm_provider: str = "ollama"
+
+    max_file_size_mb: int = 50
+    allowed_file_types: list[str] = ["pdf", "docx", "html", "md"]
 
 
 settings = Settings()
