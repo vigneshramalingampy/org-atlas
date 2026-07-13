@@ -1,3 +1,4 @@
+import asyncio
 import logging
 
 from supabase import Client, create_client
@@ -14,10 +15,11 @@ class SupabaseStorageProvider(StorageProvider):
     async def upload(
         self, bucket: str, path: str, data: bytes, content_type: str
     ) -> StoredFile:
-        self._client.storage.from_(bucket).upload(
+        await asyncio.to_thread(
+            self._client.storage.from_(bucket).upload,
             file=data,
             path=path,
-            file_options={"content-type": content_type, "upsert": "true"},
+            file_options={"content-type": content_type},
         )
 
         logger.info("Uploaded %s to %s/%s (%d bytes)", path, bucket, path, len(data))
@@ -29,17 +31,19 @@ class SupabaseStorageProvider(StorageProvider):
         )
 
     async def download(self, bucket: str, path: str) -> bytes:
-        data = self._client.storage.from_(bucket).download(path)
+        data = await asyncio.to_thread(
+            self._client.storage.from_(bucket).download, path
+        )
         logger.info("Downloaded %s/%s (%d bytes)", bucket, path, len(data))
         return data
 
     async def delete(self, bucket: str, path: str) -> None:
-        self._client.storage.from_(bucket).remove([path])
+        await asyncio.to_thread(self._client.storage.from_(bucket).remove, [path])
         logger.info("Deleted %s/%s", bucket, path)
 
     async def exists(self, bucket: str, path: str) -> bool:
         try:
-            self._client.storage.from_(bucket).list(path)
+            await asyncio.to_thread(self._client.storage.from_(bucket).list, path)
             return True
         except Exception:
             return False
