@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 
-from atlas_backend.api.documents.controller import documents_router
-from atlas_backend.api.health.controller import health_router
+from atlas_backend.api.documents.documents_controller import documents_router
+from atlas_backend.api.health.health_controller import health_router
 
 core_router = APIRouter()
 

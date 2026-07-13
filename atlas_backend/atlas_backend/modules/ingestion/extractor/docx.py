@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from docx import Document as DocxDocument
+from loguru import logger
 
 from atlas_backend.modules.ingestion.extractor.base import DocumentExtractor
 from atlas_backend.modules.ingestion.extractor.exceptions import (
@@ -21,30 +22,31 @@ class DocxExtractor(DocumentExtractor):
     paragraphs. Paragraph boundaries are preserved as double newlines so the
     downstream chunker can recognise logical breaks.
 
-    NOTE: Tables are NOT extracted here. A future enhancement could call
-    iter_cells() on each table and format the output as pipe-delimited rows.
+    Tables are extracted row-by-row as pipe-delimited lines.
     """
 
     async def extract(self, file_path: str) -> ParsedDocument:
+        logger.info("Extracting DOCX: {}", file_path)
+
         path = Path(file_path)
         if not path.exists():
+            logger.warning("DOCX file not found: {}", file_path)
             raise DocumentExtractionError(f"File not found: {file_path}")
 
         try:
             doc = DocxDocument(str(path))
         except Exception as exc:
+            logger.error("Failed to open DOCX {}: {}", file_path, exc)
             raise DocumentExtractionError(
                 f"Failed to open DOCX {file_path}: {exc}"
             ) from exc
 
-        # --- Collect paragraph text ----------------------------------------
         paragraphs: list[str] = []
         for para in doc.paragraphs:
             text = para.text.strip()
             if text:
                 paragraphs.append(text)
 
-        # --- Also extract table text (flat, row-by-row) --------------------
         for table in doc.tables:
             for row in table.rows:
                 cells = [cell.text.strip() for cell in row.cells]
@@ -53,9 +55,17 @@ class DocxExtractor(DocumentExtractor):
                     paragraphs.append(line)
 
         if not paragraphs:
+            logger.warning("No extractable text found in DOCX: {}", file_path)
             raise DocumentExtractionError(f"No extractable text found in {file_path}")
 
         text = "\n\n".join(paragraphs)
+        char_count = len(text)
+        logger.info(
+            "DOCX extracted: {} chars, {} paragraphs from {}",
+            char_count,
+            len(paragraphs),
+            path.name,
+        )
 
         metadata = DocumentMetadata(
             filename=path.name,

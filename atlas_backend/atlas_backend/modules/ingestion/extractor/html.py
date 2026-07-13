@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from bs4 import BeautifulSoup
+from loguru import logger
 
 from atlas_backend.modules.ingestion.extractor.base import DocumentExtractor
 from atlas_backend.modules.ingestion.extractor.exceptions import (
@@ -15,14 +16,6 @@ from atlas_backend.utils.enums import FileType
 
 
 class HtmlExtractor(DocumentExtractor):
-    """Extract clean readable text from an HTML file.
-
-    Uses BeautifulSoup with the lxml parser (fast, lenient with broken HTML).
-    Strips non-content elements (script, style, nav, etc.) so the RAG pipeline
-    doesn't index navigation menus, ads, or JavaScript.
-    """
-
-    # Tags whose contents are never useful for text extraction
     NOISE_TAGS = {
         "script",
         "style",
@@ -36,41 +29,46 @@ class HtmlExtractor(DocumentExtractor):
     }
 
     async def extract(self, file_path: str) -> ParsedDocument:
+        logger.info("Extracting HTML: {}", file_path)
+
         path = Path(file_path)
         if not path.exists():
+            logger.warning("HTML file not found: {}", file_path)
             raise DocumentExtractionError(f"File not found: {file_path}")
 
         try:
             raw_html = path.read_text(encoding="utf-8")
         except Exception as exc:
+            logger.error("Failed to read HTML {}: {}", file_path, exc)
             raise DocumentExtractionError(f"Failed to read {file_path}: {exc}") from exc
 
         try:
             soup = BeautifulSoup(raw_html, "lxml")
         except Exception as exc:
+            logger.error("Failed to parse HTML {}: {}", file_path, exc)
             raise DocumentExtractionError(
                 f"Failed to parse HTML {file_path}: {exc}"
             ) from exc
 
-        # --- Strip noise ---------------------------------------------------
         for tag in self.NOISE_TAGS:
             for element in soup.find_all(tag):
-                element.decompose()  # removes tag AND its children
+                element.decompose()
 
-        # --- Extract title (for metadata / display) ------------------------
         title_tag = soup.find("title")
         display_name = title_tag.get_text(strip=True) if title_tag else path.name
 
-        # --- Extract body text ----------------------------------------------
         body = soup.find("body")
         if body is None:
-            # Some documents only have body content implicitly
             body = soup
 
         text = body.get_text(separator="\n", strip=True)
 
         if not text:
+            logger.warning("No extractable text found in HTML: {}", file_path)
             raise DocumentExtractionError(f"No extractable text found in {file_path}")
+
+        char_count = len(text)
+        logger.info("HTML extracted: {} chars from {}", char_count, display_name)
 
         metadata = DocumentMetadata(
             filename=display_name,
