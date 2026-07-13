@@ -36,39 +36,39 @@ class IngestionService:
 
         try:
             job.update_status(IngestionStatus.EXTRACTING)
-            logger.info("[%s] Extracting %s", job.id, file_path)
+            logger.info("[{}] Extracting {}", job.id, file_path)
 
             extractor = ExtractorFactory.create(file_type)
             parsed = await extractor.extract(file_path)
 
             job.update_status(IngestionStatus.CLEANING)
-            logger.info("[%s] Cleaning document", job.id)
+            logger.info("[{}] Cleaning document", job.id)
 
             cleaner = CleanerFactory.create("default")
             parsed = await cleaner.clean(parsed)
 
             job.update_status(IngestionStatus.CHUNKING)
-            logger.info("[%s] Chunking document", job.id)
+            logger.info("[{}] Chunking document", job.id)
 
             chunker = ChunkingFactory.create(self._chunking_config.strategy)
             chunks = await chunker.chunk(parsed, self._chunking_config)
 
             micro_chunks = [c for c in chunks if c.parent_id is not None]
             logger.info(
-                "[%s] Created %d micro chunks, %d macro chunks",
+                "[{}] Created {} micro chunks, {} macro chunks",
                 job.id,
                 len(micro_chunks),
                 len(chunks) - len(micro_chunks),
             )
 
             job.update_status(IngestionStatus.EMBEDDING)
-            logger.info("[%s] Embedding chunks", job.id)
+            logger.info("[{}] Embedding chunks", job.id)
 
             await self._ensure_initialized(self._embedding_service.dimensions)
             embedded_chunks = await self._embedding_service.embed_chunks(micro_chunks)
 
             job.update_status(IngestionStatus.STORING)
-            logger.info("[%s] Storing vectors", job.id)
+            logger.info("[{}] Storing vectors", job.id)
 
             points = [
                 VectorPoint(
@@ -97,7 +97,7 @@ class IngestionService:
             job.total_chunks = len(points)
             job.update_status(IngestionStatus.COMPLETED)
             logger.info(
-                "[%s] Ingestion complete — %d chunks stored", job.id, job.total_chunks
+                "[{}] Ingestion complete — {} chunks stored", job.id, job.total_chunks
             )
 
         except Exception as exc:
