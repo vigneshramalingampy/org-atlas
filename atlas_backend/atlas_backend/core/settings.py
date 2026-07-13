@@ -14,7 +14,7 @@ class LogLevel(enum.Enum):
 class Settings(BaseSettings):
     environment: str = "dev"
     host: str = "0.0.0.0"
-    port: int = 8000
+    port: int = 8009
     reload: bool = True
     log_level: LogLevel = LogLevel.INFO
 
@@ -25,6 +25,8 @@ class Settings(BaseSettings):
     surrealdb_url: str = "ws://localhost:8000/rpc"
     surrealdb_namespace: str = "atlas"
     surrealdb_database: str = "knowledge"
+    surrealdb_user: str = "root"
+    surrealdb_pass: str = "root"
 
     chunking_strategy: str = "recursive"
     chunk_max_size: int = 512

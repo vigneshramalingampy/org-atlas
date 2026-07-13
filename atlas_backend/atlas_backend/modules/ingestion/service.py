@@ -1,4 +1,4 @@
-import logging
+from loguru import logger
 
 from atlas_backend.modules.ingestion.chunker.config import ChunkingConfig
 from atlas_backend.modules.ingestion.chunker.factory import ChunkingFactory
@@ -9,8 +9,6 @@ from atlas_backend.modules.ingestion.model import IngestionJob, IngestionStatus
 from atlas_backend.provider.embedding.base import EmbeddingProvider
 from atlas_backend.provider.knowledge.vector_store.base import VectorPoint, VectorStore
 from atlas_backend.utils.enums import FileType
-
-logger = logging.getLogger(__name__)
 
 
 class IngestionService:
@@ -105,6 +103,6 @@ class IngestionService:
         except Exception as exc:
             job.update_status(IngestionStatus.FAILED)
             job.error = str(exc)
-            logger.exception("[%s] Ingestion failed", job.id)
+            logger.exception("[{}] Ingestion failed: {}", job.id, exc)
 
         return job

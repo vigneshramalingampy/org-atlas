@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import mistune
+from loguru import logger
 
 from atlas_backend.modules.ingestion.extractor.base import DocumentExtractor
 from atlas_backend.modules.ingestion.extractor.exceptions import (
@@ -19,42 +20,35 @@ class MarkdownExtractor(DocumentExtractor):
 
     Strategy: convert the Markdown to HTML via mistune, then use BeautifulSoup
     to strip the HTML tags and recover plain text.
-
-    Why two hops (MD → HTML → text)?
-    - mistune is the fastest Markdown→HTML renderer for Python.
-    - BeautifulSoup already handles HTML→text perfectly (same pattern as HtmlExtractor).
-    - This avoids writing a fragile Markdown AST walker ourselves.
-
-    If you later need *structured* extraction (e.g., heading-aware sections),
-    switch to a custom mistune renderer that collects the AST directly.
     """
 
     async def extract(self, file_path: str) -> ParsedDocument:
+        logger.info("Extracting Markdown: {}", file_path)
+
         path = Path(file_path)
         if not path.exists():
+            logger.warning("Markdown file not found: {}", file_path)
             raise DocumentExtractionError(f"File not found: {file_path}")
 
         try:
             raw_md = path.read_text(encoding="utf-8")
         except Exception as exc:
+            logger.error("Failed to read Markdown {}: {}", file_path, exc)
             raise DocumentExtractionError(f"Failed to read {file_path}: {exc}") from exc
 
-        # --- Convert Markdown → HTML ---------------------------------------
         try:
-            # mistune.create_markdown() returns a render function
             render = mistune.create_markdown()
             html = render(raw_md)
         except Exception as exc:
+            logger.error("Failed to parse Markdown {}: {}", file_path, exc)
             raise DocumentExtractionError(
                 f"Failed to parse Markdown {file_path}: {exc}"
             ) from exc
 
-        # --- Strip HTML tags → plain text ----------------------------------
         from bs4 import BeautifulSoup
 
         soup = BeautifulSoup(html, "lxml")
 
-        # Remove the same noise elements as HtmlExtractor
         for tag in {
             "script",
             "style",
@@ -72,7 +66,11 @@ class MarkdownExtractor(DocumentExtractor):
         text = soup.get_text(separator="\n", strip=True)
 
         if not text:
+            logger.warning("No extractable text found in Markdown: {}", file_path)
             raise DocumentExtractionError(f"No extractable text found in {file_path}")
+
+        char_count = len(text)
+        logger.info("Markdown extracted: {} chars from {}", char_count, path.name)
 
         metadata = DocumentMetadata(
             filename=path.name,
