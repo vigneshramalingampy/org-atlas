@@ -28,8 +28,11 @@ class IngestionService:
             await self._vector_store.initialize(dimensions)
             self._initialized = True
 
-    async def ingest(self, file_path: str, file_type: FileType) -> IngestionJob:
+    async def ingest(
+        self, file_path: str, file_type: FileType, document_id: str
+    ) -> IngestionJob:
         job = IngestionJob(
+            id=document_id,
             filename=file_path.split("/")[-1].split("\\")[-1],
             file_type=file_type.value,
         )

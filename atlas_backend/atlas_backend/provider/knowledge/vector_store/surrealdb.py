@@ -85,6 +85,7 @@ class SurrealDBVectorStore(VectorStore):
                    file_type, char_count, token_count, document_id
             FROM {COLLECTION}
             WHERE embedding IS NOT NONE
+   {" ".join(f"AND {k} = {json.dumps(v)}" for k, v in (filters or {}).items())}
             ORDER BY score DESC
             LIMIT {limit}
         """
@@ -95,10 +96,10 @@ class SurrealDBVectorStore(VectorStore):
             return []
 
         search_results: list[SearchResult] = []
-        for record in results[0]["result"]:
+        for record in results:
             search_results.append(
                 SearchResult(
-                    id=record["id"],
+                    id=str(record["id"]),
                     score=record.get("score", 0.0),
                     payload={
                         "text": record.get("text", ""),

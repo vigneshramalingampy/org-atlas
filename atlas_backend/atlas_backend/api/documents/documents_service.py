@@ -65,7 +65,7 @@ class DocumentService:
     ) -> None:
         logger.info("[{}] Starting background ingestion for {}", job.id, file_path)
         assert self._service is not None
-        result = await self._service.ingest(file_path, file_type)
+        result = await self._service.ingest(file_path, file_type, document_id=job.id)
         job.status = result.status
         job.total_chunks = result.total_chunks
         job.error = result.error
