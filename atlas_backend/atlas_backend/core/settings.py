@@ -41,6 +41,17 @@ class Settings(BaseSettings):
     graph_extraction_enabled: bool = False
     graph_llm_provider: str = "ollama"
 
+    chat_llm_provider: str = "ollama"
+    chat_model: str
+    openai_api_key: str = ""
+    anthropic_api_key: str = ""
+    deepseek_api_key: str = ""
+    ollama_base_url: str = "http://localhost:11434"
+    chat_temperature: float = 0.7
+    chat_max_tokens: int = 1024
+    retrieval_top_k: int = 5
+    retrieval_min_score: float = 0.0
+
     max_file_size_mb: int = 50
     allowed_file_types: list[str] = ["pdf", "docx", "html", "md"]
 

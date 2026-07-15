@@ -27,15 +27,9 @@ The initial version focuses on:
 ```text
 org-atlas/
 │
-├── backend/              # Backend API & RAG Engine
-├── frontend/             # Web Application
+├── atlas_backend/         # Backend API & RAG Engine
+├── atlas_frontend/        # Web Application
 │
-├── docker/               # Docker configuration
-├── docs/                 # Documentation
-├── scripts/              # Helper scripts
-│
-├── docker-compose.yml
-├── .env.example
 ├── README.md
 └── ROADMAP.md
 ```
@@ -46,13 +40,13 @@ org-atlas/
 
 ### Backend
 
-- Python
-- FastAPI
-- PostgreSQL
-- Qdrant
-- Redis
-- Ollama / OpenAI
-- Docker
+- Python 3.13
+- FastAPI + Uvicorn
+- SurrealDB 2.x (vector store with HNSW cosine)
+- Supabase Storage (document file storage)
+- Sentence Transformers (all-MiniLM-L6-v2, 384-dim embeddings)
+- Ollama / OpenAI / DeepSeek / Anthropic (LLM providers)
+- pymupdf / BeautifulSoup / mistune / python-docx (document extractors)
 
 ### Frontend
 
@@ -73,72 +67,58 @@ org-atlas/
 ## Phase 1 Features
 
 - User-friendly chat interface
-- Document upload
+- Document upload (PDF, DOCX, HTML, Markdown)
 - Upload progress tracking
-- Automatic document processing
-- Vector indexing
-- AI-powered question answering
-- Source citations
-- Docker-based local development
+- Automatic document processing (extract → clean → chunk → embed)
+- Vector indexing (SurrealDB HNSW cosine similarity)
+- AI-powered question answering with source citations
+- Multiple LLM providers (Ollama, OpenAI, DeepSeek, Anthropic)
 
 ---
 
 ## Getting Started
 
-### Clone the repository
+### Prerequisites
+
+- Python **3.13**+
+- [SurrealDB 2.x](https://surrealdb.com/install) running locally
+- [Ollama](https://ollama.com/) (if using Ollama LLM provider)
+- A [Supabase](https://supabase.com/) project
+
+### Backend setup
 
 ```bash
-git clone https://github.com/<your-org>/org-atlas.git
-cd org-atlas
+cd atlas_backend
+cp .env.example .env        # edit with your credentials
+python -m venv .venv
+.venv\Scripts\activate      # Windows
+pip install -r requirements.txt
 ```
 
-### Configure environment variables
+Start SurrealDB, then run:
 
 ```bash
-cp .env.example .env
+python -m atlas_backend
 ```
 
-Update the required values inside `.env`.
+Server starts at `http://localhost:8009`. Full setup details in [`atlas_backend/README.md`](atlas_backend/README.md).
 
----
-
-### Start the application
+### Frontend setup
 
 ```bash
-docker compose up --build
+cd atlas_frontend
 ```
 
----
-
-### Access the application
-
-| Service | URL |
-|----------|-----|
-| Frontend | http://localhost:3000 |
-| Backend API | http://localhost:8000 |
-| API Documentation | http://localhost:8000/docs |
+Frontend-specific setup is documented inside its own README.
 
 ---
 
 ## Development
 
-### Backend
+See the respective sub-project README for detailed setup and architecture:
 
-```bash
-cd backend
-```
-
-Backend-specific setup instructions will be documented inside the backend directory.
-
----
-
-### Frontend
-
-```bash
-cd frontend
-```
-
-Frontend-specific setup instructions will be documented inside the frontend directory.
+- **[`atlas_backend/README.md`](atlas_backend/README.md)** — API, RAG pipeline, vector store, LLM providers
+- **`atlas_frontend/README.md`** — Web application UI
 
 ---
 
