@@ -1,6 +1,7 @@
 from loguru import logger
 
 from atlas_backend.modules.generation.prompt_builder import PromptBuilder
+from atlas_backend.modules.retrival.query_router import QueryRouter
 from atlas_backend.modules.retrival.retriver import Retriever
 from atlas_backend.provider.llm.base import LLMProvider
 from atlas_backend.schemas.chat import ChatRequest, ChatResponse, SourceRef
@@ -11,6 +12,7 @@ class ChatService:
         self,
         retriever: Retriever,
         llm_provider: LLMProvider,
+        query_router: QueryRouter,
         prompt_builder: PromptBuilder | None = None,
         temperature: float = 0.7,
         max_tokens: int = 1024,
@@ -19,6 +21,7 @@ class ChatService:
         self._model = model
         self._retriever = retriever
         self._llm = llm_provider
+        self._query_router = query_router
         self._prompt_builder = prompt_builder or PromptBuilder()
         self._temperature = temperature
         self._max_tokens = max_tokens
@@ -32,13 +35,17 @@ class ChatService:
     ) -> ChatResponse:
         logger.info("Chat request: query='{}'", request.query[:100])
 
-        results = await self._retriever.retrieve(
+        strategy = await self._query_router.classify(request.query)
+        logger.info("Retrieval strategy: {}", strategy.value)
+
+        results, subgraph = await self._retriever.retrieve(
             query=request.query,
+            strategy=strategy,
             top_k=request.top_k,
             document_id=request.document_id,
         )
 
-        messages = self._prompt_builder.build(request.query, results)
+        messages = self._prompt_builder.build(request.query, results, subgraph)
 
         answer = await self._llm.generate(
             messages=messages,
@@ -59,6 +66,9 @@ class ChatService:
         ]
 
         logger.info(
-            "Chat response: answer={} chars, {} sources", len(answer), len(sources)
+            "Chat response: strategy={}, answer={} chars, {} sources",
+            strategy.value,
+            len(answer),
+            len(sources),
         )
         return ChatResponse(answer=answer, sources=sources)
