@@ -14,6 +14,7 @@ class IngestionStatus(str, Enum):
     CHUNKING = "chunking"
     EMBEDDING = "embedding"
     STORING = "storing"
+    GRAPH_EXTRACTING = "graph_extracting"
     COMPLETED = "completed"
     FAILED = "failed"
 

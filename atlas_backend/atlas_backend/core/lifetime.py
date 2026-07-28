@@ -74,7 +74,9 @@ async def lifespan(app: FastAPI):
             api_key=getattr(settings, f"{settings.graph_llm_provider}_api_key", ""),
             base_url=settings.ollama_base_url,
         )
-        graph_extractor = LLMGraphExtractor(llm_provider=graph_llm_provider)
+        graph_extractor = LLMGraphExtractor(
+            llm_provider=graph_llm_provider,
+        )
         logger.info(
             "Graph extraction enabled (provider={})", settings.graph_llm_provider
         )
@@ -152,4 +154,3 @@ async def lifespan(app: FastAPI):
     logger.info("Shutting down...")
     await vector_store.close()
     await graph_store.close()
-    await job_store.close()
