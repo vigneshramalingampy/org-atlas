@@ -1,0 +1,30 @@
+services:
+  surrealdb:
+    image: surrealdb/surrealdb:latest
+    ports:
+      - "8000:8000"
+    command: start --user root --pass root --log info --bind 0.0.0.0:8000 file:/data
+    volumes:
+      - surreal_data:/data
+    healthcheck:
+      test: ["CMD", "surreal", "version"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: .
+    ports:
+      - "8009:8009"
+    env_file:
+      - .env
+    environment:
+      - SURREALDB_URL=ws://surrealdb:8000/rpc
+    depends_on:
+      surrealdb:
+        condition: service_healthy
+    volumes:
+      - ./atlas_backend:/app/atlas_backend
+
+volumes:
+  surreal_data:
