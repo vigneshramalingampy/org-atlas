@@ -23,4 +23,4 @@ async def upload_document(
 async def get_job_status(job_id: str, request: Request) -> JSONResponse:
     logger.info("Job status request: job_id={}", job_id)
     document_service = request.app.state.document_service
-    return document_service.get_job_status(job_id)
+    return await document_service.get_job_status(job_id)

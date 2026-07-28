@@ -14,6 +14,7 @@ from atlas_backend.modules.retrival.retriver import Retriever
 from atlas_backend.provider.embedding.sentence_transformer import (
     SentenceTransformerProvider,
 )
+from atlas_backend.provider.job_store.surrealdb import SurrealDBJobStore
 from atlas_backend.provider.knowledge.graph_store.surrealdb import SurrealDBGraphStore
 from atlas_backend.provider.knowledge.vector_store.surrealdb import (
     SurrealDBVectorStore,
@@ -30,7 +31,18 @@ async def lifespan(app: FastAPI):
         url=settings.supabase_url,
         anon_key=settings.supabase_anon_key,
     )
-    document_service = DocumentService()
+
+    job_store = SurrealDBJobStore(
+        url=settings.surrealdb_url,
+        namespace=settings.surrealdb_namespace,
+        database=settings.surrealdb_database,
+        user=settings.surrealdb_user,
+        password=settings.surrealdb_pass,
+    )
+    await job_store.connect()
+    await job_store.initialize()
+
+    document_service = DocumentService(job_store=job_store)
     document_service.set_storage_provider(storage, settings.supabase_bucket)
 
     embedding_provider = SentenceTransformerProvider(
@@ -132,7 +144,7 @@ async def lifespan(app: FastAPI):
         "enabled" if settings.graph_extraction_enabled else "disabled",
     )
     logger.info(
-        "Chat pipeline ready (llm={}, model={})",
+        "Chat pipeline ready (llm={}, model={}, router=llm)",
         settings.chat_llm_provider,
         settings.chat_model,
     )

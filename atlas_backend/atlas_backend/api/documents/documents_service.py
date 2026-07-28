@@ -8,6 +8,7 @@ from loguru import logger
 
 from atlas_backend.modules.ingestion.model import IngestionJob, IngestionStatus
 from atlas_backend.modules.ingestion.service import IngestionService
+from atlas_backend.provider.job_store.base import JobStore
 from atlas_backend.provider.storage.base import StorageProvider
 from atlas_backend.schemas.document import JobStatusResponse, UploadResponse
 from atlas_backend.utils.enums import FileType
@@ -18,11 +19,12 @@ class DocumentService:
         self,
         ingestion_service: IngestionService | None = None,
         storage_provider: StorageProvider | None = None,
+        job_store: JobStore | None = None,
         bucket: str = "atlas-documents",
     ) -> None:
-        self._jobs: dict[str, IngestionJob] = {}
         self._service = ingestion_service
         self._storage = storage_provider
+        self._job_store = job_store
         self._bucket = bucket
 
     def set_ingestion_service(self, service: IngestionService) -> None:
@@ -31,6 +33,9 @@ class DocumentService:
     def set_storage_provider(self, storage: StorageProvider, bucket: str) -> None:
         self._storage = storage
         self._bucket = bucket
+
+    def set_job_store(self, job_store: JobStore) -> None:
+        self._job_store = job_store
 
     def _resolve_file_type(self, filename: str) -> FileType | None:
         ext = Path(filename).suffix.lower().lstrip(".")
@@ -70,6 +75,10 @@ class DocumentService:
         job.total_chunks = result.total_chunks
         job.error = result.error
         job.updated_at = result.updated_at
+
+        if self._job_store:
+            await self._job_store.save(job)
+
         logger.info(
             "[{}] Background ingestion complete: status={}, chunks={}",
             job.id,
@@ -142,7 +151,8 @@ class DocumentService:
         tmp_path = tmp_dir / file.filename
         tmp_path.write_bytes(content)
 
-        self._jobs[job.id] = job
+        if self._job_store:
+            await self._job_store.save(job)
 
         background_tasks.add_task(self._run_ingestion, job, str(tmp_path), file_type)
         logger.info("Ingestion queued: job_id={}, file={}", job.id, file.filename)
@@ -159,8 +169,11 @@ class DocumentService:
             ).model_dump(mode="json"),
         )
 
-    def get_job_status(self, job_id: str) -> JSONResponse:
-        job = self._jobs.get(job_id)
+    async def get_job_status(self, job_id: str) -> JSONResponse:
+        job = None
+        if self._job_store:
+            job = await self._job_store.get(job_id)
+
         if job is None:
             logger.warning("Job not found: {}", job_id)
             return JSONResponse(
